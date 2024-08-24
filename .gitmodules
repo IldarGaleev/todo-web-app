@@ -1,0 +1,8 @@
+[submodule "todo-backend-service"]
+	path = todo-backend-service
+	url = https://github.com/IldarGaleev/todo-backend-service
+	branch = main
+[submodule "todo-rest-gateway-service"]
+	path = todo-rest-gateway-service
+	url = https://github.com/IldarGaleev/todo-rest-gateway-service
+	branch = main

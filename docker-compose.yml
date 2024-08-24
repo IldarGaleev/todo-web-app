@@ -1,0 +1,72 @@
+version: "3.4"
+name: "todo_app"
+
+x-todo-shared-env: &todo-shared-env
+  ENV_MODE: $ENV_MODE
+
+services:
+  backend:
+    depends_on:
+      - postgres
+    environment:
+      <<: *todo-shared-env
+      PORT: 9090
+      SECRET_KEY: $BACKEND_SECRET_KEY
+      SECRETS_MAX_AGE: $BACKEND_SECRETS_MAX_AGE
+      DSN: "host=postgres user=postgres dbname=postgres password=postgres sslmode=disable"
+
+    build: ./todo-backend-service/
+    working_dir: /app
+    command: ./service
+    restart: always
+
+    networks:
+      - net_lan
+
+  gateway:
+    depends_on:
+      - backend
+    build: ./todo-rest-gateway-service/
+
+    environment:
+      <<: *todo-shared-env
+      GRPC_HOSTNAME: "backend"
+      GRPC_PORT: 9090
+      API_HOSTNAME: ""
+      API_PORT: 80
+      GIN_MODE: $GIN_MODE
+    ports:
+      - "8080:80"
+
+    working_dir: /app
+    command: ./service
+    restart: always
+
+    networks:
+      - net_lan
+
+  postgres:
+    image: postgres:alpine3.19
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "postgres"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+    volumes:
+      - postgres_todo_app_data:/var/lib/postgresql/data
+    networks:
+      - net_lan
+
+volumes:
+  postgres_todo_app_data:
+
+networks:
+  net_lan:
+    driver: bridge
